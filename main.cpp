@@ -15,7 +15,8 @@
 #include "file.h"
 #include "utils.h"
 #include "sstream"
-
+#include <stdio.h>
+#include <unistd.h>
 
 #define EXIST(file) (access((file).c_str(), 0) == 0)
 #define ERROR_PRINT(x) std::cout << "" << (x) << "" << std::endl
@@ -410,12 +411,10 @@ bool ReadSyncFile(std::string srcFile, std::vector<SyncDataFile> &files, const b
 
     do
     {
-        fin >> syncFile.imageLeft >> syncFile.imagePose >> syncFile.lidar
-            >> syncFile.lidarPose;
+        fin >> syncFile.imageLeft;
         if (flag)
         {
             fin >> syncFile.tof;
-            fin >> syncFile.tofPose;
         }
         files.push_back(syncFile);
     } while (fin.get() != EOF);
@@ -553,13 +552,15 @@ int main() {
 
     // 读取图像
     std::vector<SyncDataFile> dataset;
-    std::string inputDir = "/media/xin/data1/data/parker_data/2022_08_22/louti/data_2023_0822_2"; //数据集路径
-    std::string inputTofSaveDir = "/home/xin/Desktop/test_tof/"; //数据集路径
+//    std::string inputDir = "/data1/Rubby/BASE/TRAIN/data_CaptureImgTof/data_2023_09_07_0"; //数据集路径
+//    std::string inputTofSaveDir = "/data1/Rubby/TOF/TRAIN/data_CaptureImgTof/data_2023_09_07_0"; //数据集路径
+    std::string inputDir = "/data1/Rubby/BASE/TRAIN/data_CaptureImgTof/data_2023_09_07_0"; //数据集路径
+    std::string inputTofSaveDir = "/data1/Rubby/TOF/TRAIN/data_CaptureImgTof/data_2023_09_07/data_2023_09_07_0"; //数据集路径
     psl::CameraMoudleParam param;
-    std::string cameraConfigFile = inputDir + "/config.yaml"; //相机配置文件路径
+    std::string cameraConfigFile = inputDir + "/config.yaml"; //相机配置文件路径/
     GetCameraConfig(cameraConfigFile, param);  // 获取相机配置数据
 
-    const std::string parkerDir = "/home/xin/zhang/c_project/tof/tof_label/config/param_parker.yaml"; //parker配置文件路径
+    const std::string parkerDir = "/data1/Rubby/BASE/TRAIN/data_CaptureImgTof/data_2023_09_07_0/param_parker.yaml"; //parker配置文件路径
     ConfigParam configParam;
     GetParkerConfig(parkerDir, configParam);  //获取parker配置数据
     bool binocular = GetData(inputDir, dataset, true);

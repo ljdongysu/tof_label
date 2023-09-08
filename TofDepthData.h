@@ -26,7 +26,7 @@ struct TofDepthData {
   int height;                   //高 172
   uint64_t frameIndex;          //帧号
   Time time_stamp;  //时间戳
-  TofDepthPoint data[224*109];
+  TofDepthPoint data[224*128];
 //  psl::SlamResult pose;
 };
 
