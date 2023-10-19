@@ -546,6 +546,51 @@ bool Remap(const CameraType type, cv::Mat &image,cv::Mat remapX,cv::Mat remapY)
     return true;
 }
 
+void testRemap(const psl::CameraParam &cameraParam
+        , cv::Mat& remapXLeftFisheye, cv::Mat& remapYLeftFisheye, cv::Mat imageInput)
+{
+    cv::Mat K, P, R, D;
+    K = cv::Mat(3, 3, CV_64FC1, (unsigned char *) cameraParam._K);
+    D = cv::Mat(4, 1, CV_64FC1, (unsigned char *) cameraParam._D);
+//    R = cv::Mat::eye(3, 3, CV_64FC1);
+    R = cv::Mat(3, 3, CV_64FC1, (unsigned char *) cameraParam._R);
+    P = cv::Mat(3, 4, CV_64FC1, (unsigned char *) cameraParam._P);
+    std::cout << "K: " << K <<std::endl;
+    std::cout << "D: " << D <<std::endl;
+
+    std::cout << "R: " << R <<std::endl;
+    std::cout << "P: " << P <<std::endl;
+    remapXLeftFisheye.create(cv::Size(WIDTH, HEIGHT), CV_32FC1);
+    remapYLeftFisheye.create(cv::Size(WIDTH, HEIGHT), CV_32FC1);
+    cv::fisheye::initUndistortRectifyMap(K, D, R, P.rowRange(0, 3).colRange(0, 3)
+            , cv::Size(WIDTH, HEIGHT), CV_32F
+            , remapXLeftFisheye, remapYLeftFisheye);
+
+
+    cv::Mat remap = imageInput;
+    cv::Mat rgb;
+
+
+    cv::remap(imageInput, remap, remapXLeftFisheye, remapYLeftFisheye
+            , cv::INTER_LINEAR);
+
+    if (1 == remap.channels())
+    {
+        std::vector<cv::Mat> grayGroup(3, remap);
+        cv::merge(grayGroup, rgb);
+    }
+    else if (3 == remap.channels())
+    {
+        rgb = remap;
+    }
+    else
+    {
+        return;
+    }
+
+    imageInput = rgb;
+    cv::imwrite("image1.png", imageInput);
+}
 
 
 int main() {
@@ -554,13 +599,13 @@ int main() {
     std::vector<SyncDataFile> dataset;
 //    std::string inputDir = "/data1/Rubby/BASE/TRAIN/data_CaptureImgTof/data_2023_09_07_0"; //数据集路径
 //    std::string inputTofSaveDir = "/data1/Rubby/TOF/TRAIN/data_CaptureImgTof/data_2023_09_07_0"; //数据集路径
-    std::string inputDir = "/data1/Rubby/BASE/TRAIN/data_CaptureImgTof/data_2023_09_07_0"; //数据集路径
-    std::string inputTofSaveDir = "/data1/Rubby/TOF/TRAIN/data_CaptureImgTof/data_2023_09_07/data_2023_09_07_0"; //数据集路径
+    std::string inputDir = "/data/ABBY/BASE/TEST/pick_mask_add/data_2023_09_12_0_pick"; //数据集路径
+    std::string inputTofSaveDir = "./result_0912_0_25_angle10/"; //数据集路径
     psl::CameraMoudleParam param;
     std::string cameraConfigFile = inputDir + "/config.yaml"; //相机配置文件路径/
     GetCameraConfig(cameraConfigFile, param);  // 获取相机配置数据
 
-    const std::string parkerDir = "/data1/Rubby/BASE/TRAIN/data_CaptureImgTof/data_2023_09_07_0/param_parker.yaml"; //parker配置文件路径
+    const std::string parkerDir = "/home/indemind/Code/PycharmProjects/Depth_Estimation/tof_label/config/param_device.yaml"; //parker配置文件路径
     ConfigParam configParam;
     GetParkerConfig(parkerDir, configParam);  //获取parker配置数据
     bool binocular = GetData(inputDir, dataset, true);
@@ -602,14 +647,16 @@ int main() {
         GetTofPoints(tof, points, configParam.structure.tofAngle); // tof点坐标转换
 
         // remap操作
-        cv::Mat remapX = cv::Mat();
-        cv::Mat remapY = cv::Mat();
-        ReadPara(param._left_camera.at(RESOLUTION), remapX, remapY);
-        ReadPara(param._right_camera.at(RESOLUTION), remapX, remapY);
+        cv::Mat remapXLeft = cv::Mat();
+        cv::Mat remapYLeft = cv::Mat();
+        cv::Mat remapXRight = cv::Mat();
+        cv::Mat remapYRight = cv::Mat();
+        ReadPara(param._left_camera.at(RESOLUTION), remapXLeft, remapYLeft);
+        ReadPara(param._right_camera.at(RESOLUTION), remapXRight, remapYRight);
         const CameraType letftype = LEFT;
         const CameraType righttype = RIGHT;
-        Remap(letftype, imageLeft,remapX,remapY);
-        Remap(righttype, imageRight,remapX,remapY);
+        Remap(letftype, imageLeft,remapXLeft,remapYLeft);
+        Remap(righttype, imageRight,remapXRight,remapYRight);
 
         std::vector<Eigen::Vector3d> pointsSelected;
         std::vector<cv::Point> imagePoints;
